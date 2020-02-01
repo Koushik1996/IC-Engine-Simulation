@@ -1,0 +1,586 @@
+<!-- Can Update with the equations as used in Acceleration Analysis File -->
+
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+<meta charset="UTF-8">
+
+<title>SOLVE - Mechanics of Machines Lab - Slider Crank Mechanism</title>
+
+<!-- DND-Required css and js files -->
+<link rel="stylesheet" href="sins/MOMstyle.css" />
+
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js'></script>
+<script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js'></script>
+
+
+<script type="text/javascript" src= "sins/MOMscript.js"></script>
+
+<script type="text/javascript" >
+//Script specific to simulation
+//program variables
+//controls section
+var simstatus=0; 
+var rotstatus=1;
+//comments section
+var commenttext="Some Text";
+var commentloc=0;
+//computing section
+var trans= new point(250,250);
+
+var o= new point(0,0,"");
+var a= new point(0,0,"");
+var b= new point(0,0,"");
+//var d= new point(0,0,"D");
+
+//co-ordinates for force vector triangle
+var F0 = new point(0,0,"F0");
+var F1 = new point(0,0,"F1");
+
+
+
+var theta2 = 40; // all angles to be defined either in degrees only or radians only throughout the program and convert as and when required
+var phi=0; // All angles in Degrees. (mention the specification in the script like here) 
+var omega2=0; // angular velocity in rad/s
+//var omega3=0, omega4=0;
+
+var r=30,l=70;
+var rpm=2000;
+var flaggrashof=true;
+//graphics section
+var canvas;
+var ctx;
+//timing section
+var simTimeId = setInterval("",'1000');
+var pauseTime = setInterval("",'1000');
+var time=0;
+//point tracing section
+var ptx = [];
+var pty = [];
+//click status of legend and quick reference
+var legendCS = false;
+var quickrefCS = false;
+//temporary or dummy variables
+var temp=0;
+var offset=0;
+/*
+// for trials during development
+function trythis()
+{ 		alert();}
+*/
+
+//change simulation specific css content. e.g. padding on top of variable to adjust appearance in variables window
+function editcss()
+{
+$('.variable').css('padding-top','40px');
+
+
+//$('#legend').css("width",document.getElementById('legendimg').width+"px");
+//$('#quickref').css("height",document.getElementById('quickrefimg').height+"px");
+
+}
+
+//start of simulation here; starts the timer with increments of 0.1 seconds
+function startsim()
+{
+simTimeId=setInterval("time=time+0.1; varupdate(); ",'100');
+}
+
+// switches state of simulation between 0:Playing & 1:Paused
+function simstate()
+{
+  var imgfilename=document.getElementById('playpausebutton').src;
+  imgfilename = imgfilename.substring(imgfilename.lastIndexOf('/') + 1, imgfilename.lastIndexOf('.'));
+  if (imgfilename=="bluepausedull")
+  {
+    document.getElementById('playpausebutton').src="sins/blueplaydull.png";
+	 clearInterval(simTimeId);
+    simstatus=1;
+    $('#theta2spinner').spinner("value",theta2);			//to set simulation parameters on pause
+    pauseTime=setInterval("varupdate();",'100');
+  }
+    if (imgfilename=="blueplaydull")
+  {
+  	 time=0;			
+  	 clearInterval(pauseTime);
+    document.getElementById('playpausebutton').src="sins/bluepausedull.png";
+    simTimeId=setInterval("time=time+0.1; varupdate(); ",'100');    
+    simstatus=0;
+  } 
+}
+
+// switches state of rotation between 1:CounterClockWise & -1:Clockwise
+function rotstate()
+{
+  var imgfilename=document.getElementById('rotationbutton').src;
+  imgfilename = imgfilename.substring(imgfilename.lastIndexOf('/') + 1, imgfilename.lastIndexOf('.'));
+  if (imgfilename=="bluecwdull")
+  {
+    document.getElementById('rotationbutton').src="sins/blueccwdull.png";
+    rotstatus=-1;
+  }
+    if (imgfilename=="blueccwdull")
+  {
+    document.getElementById('rotationbutton').src="sins/bluecwdull.png";
+    rotstatus=1;
+  } 
+}
+
+/*
+//Displaying Equations for Quick Reference
+function showEquations()
+{
+	if(quickrefCS)
+	{
+		$('#quickreficon').css('border', 'double');
+		$('#quickref').css('width', '0px');
+		$('#quickref').css('left', '600px');
+		$('#quickref').css('border', '0px');
+		quickrefCS=false;	
+		
+	}
+	else
+	{
+		$('#quickreficon').css('border', 'inset red');
+		$('#quickref').css('width', document.getElementById('quickrefimg').width+"px");
+		$('#quickref').css("left", 599-document.getElementById('quickrefimg').width+"px");
+		$('#quickref').css('border', 'solid 1px');
+		quickrefCS=true;	
+	}
+}
+
+//Displaying Legend
+function showLegend()
+{
+	if(legendCS)
+	{
+		$('#legendicon').css('border', 'double');
+		$('#legend').css('height', '0px');
+		$('#legend').css('border', '0px');
+		legendCS=false;	
+	}
+	else
+	{
+		$('#legendicon').css('border', 'inset red');
+		$('#legend').css("height", document.getElementById('legendimg').height+"px");
+		$('#legend').css('border', 'solid 1px');
+		legendCS=true;	
+	}
+}
+*/
+
+
+//Initialise system parameters here
+function varinit()
+{
+varchange();		
+//Variable r1 slider and number input types
+//$('#r1slider').slider("value", 80);	
+//$('#r1spinner').spinner("value", 80);
+//Variable r2 slider and number input types
+$('#r2slider').slider("value", 3000);	
+$('#r2spinner').spinner("value", 3000);
+//Variable r3 slider and number input types
+/*<!-- $('#r3slider').slider("value", 100);	 -->
+<!-- $('#r3spinner').spinner("value", 100); -->
+<!-- //Variable r4 slider and number input types -->
+<!-- //$('#r4slider').slider("value", 60);	 -->
+<!-- //$('#r4spinner').spinner("value", 60); -->
+<!-- //Variable theta2 slider and number input types -->
+<!-- $('#theta2slider').slider("value", 40);	 -->
+<!-- $('#theta2spinner').spinner("value", 40); -->
+<!-- //Variable omega2 slider and number input types -->
+<!-- $('#omega2slider').slider("value", 1);	 -->
+<!-- $('#omega2spinner').spinner("value", 1); -->*/
+}
+
+// Initialise and Monitor variable containing user inputs of system parameters.
+//change #id and repeat block for new variable. Make sure new <div> with appropriate #id is included in the markup
+function varchange()
+{
+/*//Variable r1 slider and number input types
+$('#r1slider').slider({ max : 100, min : 20, step : 2 });		// slider initialisation : jQuery widget
+$('#r1spinner').spinner({ max : 100, min : 20, step : 2 });		// number initialisation : jQuery widget			
+// monitoring change in value and connecting slider and number
+// setting trace point coordinate arrays to empty on change of link length
+$( "#r1slider" ).on( "slide", function( e, ui ) { $('#r1spinner').spinner("value",ui.value); ptx=[]; pty=[]; } );
+$( "#r1spinner" ).on( "spin", function( e, ui ) { $('#r1slider').slider("value",ui.value); ptx=[]; pty=[]; } );
+$( "#r1spinner" ).on( "change", function() {  varchange() } );
+*/
+//Variable r2 slider and number input types
+$('#r2slider').slider({ max : 8000, min : 1000, step : 2000 });		// slider initialisation : jQuery widget
+$('#r2spinner').spinner({ max : 8000, min : 1000, step : 2000 });		// number initialisation : jQuery widget			
+// monitoring change in value and connecting slider and number
+// setting trace point coordinate arrays to empty on change of link length
+
+
+$( "#r2slider" ).on( "slide", function( e, ui ) { $('#r2spinner').spinner("value",ui.value); ptx=[]; pty=[]; r2change(); } );
+$( "#r2spinner" ).on( "spin", function( e, ui ) { $('#r2slider').slider("value",ui.value); ptx=[]; pty=[]; } );
+$( "#r2spinner" ).on( "change", function() {  varchange() } );
+
+/*<!-- //Variable r3 slider and number input types -->
+<!-- $('#r3slider').slider({ max : 240, min : 80, step : 2 });		// slider initialisation : jQuery widget -->
+<!-- $('#r3spinner').spinner({ max : 240, min : 80, step : 2 });		// number initialisation : jQuery widget			 -->
+<!-- // monitoring change in value and connecting slider and number -->
+<!-- // setting trace point coordinate arrays to empty on change of link length -->
+<!-- $( "#r3slider" ).on( "slide", function( e, ui ) { $('#r3spinner').spinner("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#r3spinner" ).on( "spin", function( e, ui ) { $('#r3slider').slider("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#r3spinner" ).on( "change", function() {  varchange() } ); -->*/
+
+/*<!-- //Variable r4 slider and number input types -->
+<!-- $('#r4slider').slider({ max : 100, min : 20, step : 2 });		// slider initialisation : jQuery widget -->
+<!-- $('#r4spinner').spinner({ max : 100, min : 20, step : 2 });		// number initialisation : jQuery widget			 -->
+<!-- // monitoring change in value and connecting slider and number -->
+<!-- // setting trace point coordinate arrays to empty on change of link length -->
+<!-- $( "#r4slider" ).on( "slide", function( e, ui ) { $('#r4spinner').spinner("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#r4spinner" ).on( "spin", function( e, ui ) { $('#r4slider').slider("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#r4spinner" ).on( "change", function() {  varchange() } ); -->
+<!-- */ 
+/*<!-- //Variable theta2 slider and number input types -->
+<!-- $('#theta2slider').slider({ max : 360, min : 0, step : 2 });		// slider initialisation : jQuery widget -->
+<!-- $('#theta2spinner').spinner({ max : 360, min : 0, step : 2 });		// number initialisation : jQuery widget			 -->
+<!-- // monitoring change in value and connecting slider and number -->
+<!-- // setting trace point coordinate arrays to empty on change of link length -->
+<!-- $( "#theta2slider" ).on( "slide", function( e, ui ) { $('#theta2spinner').spinner("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#theta2spinner" ).on( "spin", function( e, ui ) { $('#theta2slider').slider("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#theta2spinner" ).on( "change", function() {  varchange() } ); -->
+
+<!-- //Variable omega2 slider and number input types -->
+<!-- $('#omega2slider').slider({ max : 1.8, min : 0.2, step : 0.2 });		// slider initialisation : jQuery widget -->
+<!-- $('#omega2spinner').spinner({ max : 1.8, min : 0.2, step : 0.2 });		// number initialisation : jQuery widget			 -->
+<!-- // monitoring change in value and connecting slider and number -->
+<!-- // setting trace point coordinate arrays to empty on change of link length -->
+<!-- $( "#omega2slider" ).on( "slide", function( e, ui ) { $('#omega2spinner').spinner("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#omega2spinner" ).on( "spin", function( e, ui ) { $('#omega2slider').slider("value",ui.value); ptx=[]; pty=[]; } ); -->
+<!-- $( "#omega2spinner" ).on( "change", function() {  varchange() } ); -->*/
+
+varupdate();
+
+}
+
+//Computing of various system parameters
+function varupdate()
+{
+
+$('#r2slider').slider("value", $('#r2spinner').spinner('value'));  //updating slider location with change in spinner(debug)
+/*<!-- $('#r3slider').slider("value", $('#r3spinner').spinner('value')); -->
+<!-- $('#theta2slider').slider("value", $('#theta2spinner').spinner('value'));  -->*/
+
+rpm=$('#r2spinner').spinner("value");
+/*<!-- l=$('#r3spinner').spinner("value"); -->
+<!-- $('#omega2set').hide();  -->
+<!-- $('#r3slider').slider({max: 6*$('#r2slider').slider('value')}); -->
+<!-- $('#r3slider').slider({min: 2.5*$('#r2slider').slider('value')}); -->
+<!-- $('#r3spinner').spinner({max: 6*$('#r2slider').slider('value')}); -->
+<!-- $('#r3spinner').spinner({min:2.5*$('#r2slider').slider('value')}); -->*/
+omega2=(2*Math.PI*rpm)/60;
+if(!simstatus)
+{
+
+/*
+$('#omega2slider').slider("enable"); 
+$('#omega2spinner').spinner("enable");
+ */
+ /*<!-- $('#r2slider').slider("disable");  -->
+<!-- $('#r2spinner').spinner("disable"); -->
+<!-- $('#r3slider').slider("disable");  -->
+<!-- $('#r3spinner').spinner("disable"); -->
+<!-- $('#theta2slider').slider("disable");  -->
+<!-- $('#theta2spinner').spinner("disable");  -->
+//omega2=$('#omega2spinner').spinner("value");
+<!-- printcomment("",2); -->*/
+theta2=theta2+(1*0.0007*deg(omega2));
+theta2=theta2%360;
+if(theta2<0)theta2+=360;
+
+}
+if(simstatus)
+{
+/*<!-- $('#r2slider').slider("enable");  -->
+<!-- $('#r2spinner').spinner("enable"); -->
+<!-- $('#r3slider').slider("enable");  -->
+<!-- $('#r3spinner').spinner("enable"); -->
+<!-- $('#theta2slider').slider("enable");  -->
+<!-- $('#theta2spinner').spinner("enable"); -->*/
+/*$('#omega2slider').slider("disable"); 
+$('#omega2spinner').spinner("disable"); */
+theta2=$('#theta2spinner').spinner("value");
+printcomment("Crank at "+theta2+"&deg; <br>Position of slider from Crank Center = "+roundd(b.xcoord-o.xcoord,2)+"cm",2);
+
+}
+if(rotstatus==1){
+   o.xcoord=0;
+	o.ycoord=0;
+	
+	a.xcoord=o.xcoord+r*Math.sin(rad(theta2));
+	a.ycoord=o.ycoord+r*Math.cos(rad(theta2));
+
+  phi=deg(Math.asin((r*Math.sin(rad(theta2)))/l));
+  b.xcoord=0;         //axcoord+L;
+  b.ycoord=a.ycoord+l*Math.cos(rad(phi));                                      //(r*Math.cos(rad(theta))+(L^2-r^2*(Math.sin(rad(theta)))^2)^(1/2));//r*Math.cos(rad(theta))-L; //aycoord+L;  
+
+	
+	//(r*Math.cos(rad(theta))+(L^2-r^2*(Math.sin(rad(theta)))^2)^(1/2));//bycoord;//r*Math.cos(rad(theta))+L; // -->
+}
+
+else{
+  o.xcoord=0;
+	o.ycoord=0;
+	
+	a.xcoord=o.xcoord+r*Math.cos(rad(theta2));
+	a.ycoord=o.ycoord+r*Math.sin(rad(theta2));
+
+  phi=deg(Math.acos((r*Math.cos(rad(theta2)))/l));
+  b.xcoord=0;         //axcoord+L;
+  b.ycoord=a.ycoord+l*Math.sin(rad(phi));                                      //(r*Math.cos(rad(theta))+(L^2-r^2*(Math.sin(rad(theta)))^2)^(1/2));//r*Math.cos(rad(theta))-L; //aycoord+L;  
+  
+  //(r*Math.cos(rad(theta))+(L^2-r^2*(Math.sin(rad(theta)))^2)^(1/2));//bycoord;//r*Math.cos(rad(theta))+L; //
+  
+}
+  
+
+printcomment("Limits of l for the set r : "+$('#r3spinner').spinner("option","min")+" and\n "+$('#r3spinner').spinner("option","max")+" ",1);
+
+draw();
+
+}
+
+//Simulation graphics
+function draw()
+{
+  canvas = document.getElementById("simscreen");
+  ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,550,400);  //clears the complete canvas#simscreen everytime
+  
+  pointtrans(o,trans);
+  pointtrans(a,trans);
+  pointtrans(b,trans);
+  
+//Crank Center and Sliding base 
+   ctx.beginPath();  
+   ctx.strokeStyle="#000000";
+   ctx.lineWidth=20;
+	ctx.moveTo(o.xcoord,o.ycoord);
+	ctx.lineTo(o.xcoord,o.ycoord+10);
+	ctx.stroke();
+	ctx.closePath();
+	
+	/*<!-- ctx.beginPath(); -->
+    <!-- ctx.lineWidth=10; -->
+	<!-- ctx.strokeStyle= "#666666"; -->
+	<!-- ctx.moveTo(75,o.ycoord+15); -->
+	<!-- ctx.lineTo(530,o.ycoord+15); -->
+	<!-- ctx.stroke(); -->
+	<!-- ctx.closePath();	 -->*/
+	
+  pointjoin(o,a,ctx,"#CCCC00",12);
+
+  pointdisp(o,ctx,2,"#000000","#003366",'','','');
+  ctx.strokeStyle="#000";
+  ctx.arc(o.xcoord,o.ycoord,6,0,2*Math.PI,false);  
+  ctx.stroke();
+ 
+  pointjoin(a,b,ctx,"#CCCC00",12);
+  
+  pointdisp(a,ctx,2,"#000000","#003366",'','','');
+  ctx.strokeStyle="#000";
+  ctx.arc(a.xcoord,a.ycoord,5,0,2*Math.PI,false);
+  ctx.stroke(); 
+  pointdisp(b,ctx,5,"#000000","#003366",'','','');
+
+  drawrem(ctx);
+
+// slider element  
+  ctx.globalAlpha=0.8; 
+  drawrect(b,50,20,10,ctx,"#CC9933","#CC9933",1);  
+  ctx.globalAlpha=1;  
+
+
+
+
+  
+ /* if(document.getElementById("trace").checked==true)
+  {
+  pointtrace(ptx,pty,ctx,"blue",2);
+  pointdisp(p,ctx,2,'','','',true,1);
+  }
+  else
+  {
+  ptx=[];
+  pty=[];
+  }*/
+}
+
+function drawrem(context)
+{	
+
+// positioning dimension display  
+  /* <!-- if(theta2%360<=180) -->
+	  <!-- offset=-45; -->
+	<!-- else -->
+	  <!-- offset=20; -->*/
+
+// dimension line      
+   context.save();
+   context.moveTo(o.xcoord,o.ycoord-offset);
+	context.lineWidth=3;
+   context.strokeStyle="#000000";
+	context.lineTo(b.xcoord,o.ycoord-offset);
+	context.moveTo(o.xcoord,o.ycoord-offset+5);
+	context.lineTo(o.xcoord,o.ycoord-offset-5);
+	context.moveTo(b.xcoord,o.ycoord-offset+5);
+	context.lineTo(b.xcoord,o.ycoord-offset-5);
+	context.stroke();
+	
+// arrows at dimension
+ // drawArrow(b.xcoord,b.ycoord-offset,context,180,15,30,'#000','',"#000");
+  //drawArrow(o.xcoord,o.ycoord-offset,context,0,15,30,'#000','',"#000");
+	
+
+// Position Analysis Title	
+	context.save();
+   context.lineWidth=1;
+   context.font="12px 'Comic Sans MS'";
+   context.fillStyle="#000000";
+   context.fillText("Position Analysis", 15,15);
+   context.restore();
+
+// r, l, d display
+	context.save();
+	context.lineWidth=1;
+	context.strokeStyle="#000000";
+	context.font = "10px Arial";
+	//context.strokeText('d', (o.xcoord+b.xcoord)/2,o.ycoord-offset-10);	
+	context.strokeText('r',(o.xcoord+a.xcoord)/2-1,(o.ycoord+a.ycoord)/2+1);
+	context.strokeText('l',(a.xcoord+b.xcoord)/2-1,(a.ycoord+b.ycoord)/2+3);
+	context.restore();
+}
+
+// prints comments passed as 'commenttext' in location specified by 'commentloc' in the comments box;
+// 0 : Single comment box, 1 : Left comment box, 2 : Right comment box
+function printcomment(commenttext,commentloc)
+{
+  if(commentloc==0)
+  {
+  document.getElementById('commentboxright').style.visibility='hidden';
+  document.getElementById('commentboxleft').style.width='570px';
+  document.getElementById('commentboxleft').innerHTML = commenttext;
+  }
+  else if(commentloc==1)
+  {
+  document.getElementById('commentboxright').style.visibility='visible';
+  document.getElementById('commentboxleft').style.width='285px';
+  document.getElementById('commentboxleft').innerHTML = commenttext;
+  }
+  else if(commentloc==2)
+  {
+  document.getElementById('commentboxright').style.visibility='visible';
+  document.getElementById('commentboxleft').style.width='285px';
+  document.getElementById('commentboxright').innerHTML = commenttext;
+  }
+  else
+  {
+  document.getElementById('commentboxright').style.visibility='hidden';
+  document.getElementById('commentboxleft').style.width='570px';
+  document.getElementById('commentboxleft').innerHTML = "<center>please report this issue to adityaraman@gmail.com</center>"; 
+  // ignore use of deprecated tag <center> . Code is executed only if printcomment function receives inappropriate commentloc value
+  }
+}
+
+</script>
+
+</head>
+
+<body onload="editcss(); startsim(); varinit();">
+
+<!-- DND-Verifying JavaScript is enabled in browser -->
+<noscript>
+The simulation requires JavaScript to be enabled.
+</noscript>
+
+<!-- 
+Author : Sai Aditya Raman 
+send an email to adityaraman09@gmail.com for any communication
+-->
+
+<!-- Defining Container for Simulation -->
+<div id="container">
+
+<!-- Replace TITLE with simulation title to be displayed next to logo-->
+<div id="simtitle">Slider Crank Mechanism</div>
+
+<!-- Region for simulation display -->
+<canvas id="simscreen" height="400px" width="550px"></canvas>
+
+<div id="titleincanvas"></div>
+<div id="datatable1" class="datatable"></div>
+<div id="datatable2" class="datatable"></div>
+
+<!-- Equation Reference and Legend for Graphs etc 
+<div id="quickreficon" title="Equations" onclick="showEquations();"></div>
+<div id="quickref"><img id="quickrefimg" src="sins/tick.png"></img></div>
+<div id="legendicon" title="Legend" onclick="showLegend();"></div>
+<div id="legend"><img id="legendimg" src="sins/tick.png"></img></div>
+-->
+<!-- Region for comment / question prompts -->
+<div id="commentboxleft"></div>
+<div id="commentboxright"></div>
+
+<!-- DND-Title of region for variables display --> 
+<div id="vartitle">VARIABLES</div>
+
+<!-- Region for Input parameters of simulation -->
+<div id="variables">
+
+<!-- System variable input from user through slider and spinner jQuery widgets 
+repeat block with new variable name and new id for widgets-->
+
+<div class="variable">
+<div class="varname"><p  title="rpm">rpm (mm)</p>
+<input id="r2spinner"></input></div>
+<div id="r2slider"></div>
+</div>
+
+<!-- <div class="variable"> -->
+<!-- <div class="varname"><p title="Link Length">l (cm)</p> -->
+<!-- <input id="r3spinner"></input></div> -->
+<!-- <div id="r3slider"></div> -->
+<!-- </div> -->
+
+<!-- <div id = "theta2set" class="variable"> -->
+<!-- <div class="varname"><p title='Input Angle'>&theta; (&deg;) </p> -->
+<!-- <input id="theta2spinner"></input></div> -->
+<!-- <div id="theta2slider"></div> -->
+<!-- </div> -->
+
+<!-- <div id = "omega2set" class="variable"> -->
+<!-- <div class="varname"><p title='Input Angular Velocity'>&omega; (rad/s) </p> -->
+<!-- <input id="omega2spinner"></input></div> -->
+<!-- <div id="omega2slider"></div> -->
+<!-- </div> -->
+</div>
+
+<!-- DND-Title of region for controls display -->
+<div id="ctrltitle">CONTROLS</div>
+
+<!-- Region for User controls of simulation -->
+<div id="controls">
+<img id="playpausebutton" onclick="simstate()" src="sins/bluepausedull.png" />
+<img id="rotationbutton" onclick="rotstate()" src="sins/bluecwdull.png" />
+<img id="screenchangesforward" onclick="screenchangef()" src="sins/bluefwddulls.png" />
+<img id="screenchangesbackward" onclick="screenchangeb()" src="sins/bluebkdulls.png" />
+
+</div>
+
+<!-- DND-Copyright display-->
+<div id="copyright" title="Developer : Supreeth Dev"> Copyright &copy; SOLVE The Virtual Lab @ NITK Surathkal </div>
+
+</div><!-- Container div close -->
+
+<!-- For trials during development
+write in trythis() function the outputs that you want to check.
+<input type='button' onclick='trythis()' value="try me"></input> 
+-->
+</body>
+</html>
