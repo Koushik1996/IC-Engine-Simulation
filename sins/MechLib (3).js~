@@ -1,0 +1,60 @@
+//Custom defined class for Point (for coordinates in a system)
+function point(xcoord,ycoord,letter)
+{
+	this.xcoord = xcoord;
+	this.ycoord = ycoord;
+	this.letter = letter;	
+}
+function pointtrans(a, trans)
+{
+	a.xcoord=trans.xcoord+a.xcoord;
+	a.ycoord=trans.ycoord-a.ycoord;
+	return a;
+}
+//write function for displaying a point
+function pointdisp(a,context,lwidth)
+{
+	if(!lwidth) lwidth=8;
+	context.beginPath();
+	context.moveTo(a.xcoord,a.ycoord);	
+	context.strokeStyle="Black";
+	context.lineWidth=1;
+	context.arc(a.xcoord,a.ycoord,lwidth,0,2*Math.PI);
+	context.fill();
+	context.stroke();
+	context.beginPath();	
+	context.strokeStyle="White";
+	context.font = "10px Georgia";
+	context.strokeText(a.letter, a.xcoord-3,a.ycoord+3);
+}
+
+function pointdist(a,b)
+{
+	return Math.sqrt((b.xcoord-a.xcoord)*(b.xcoord-a.xcoord)+(b.ycoord-a.ycoord)*(b.ycoord-a.ycoord));
+	
+}
+//write function for displaying a line
+function pointjoin(a,b,context,lcolor,lwidth)
+{
+	if(!lwidth) lwidth=10;	
+	if(!lcolor) lcolor="Black";
+	
+	context.beginPath();	
+	context.lineCap="round";
+	context.moveTo(a.xcoord, a.ycoord);
+	context.lineTo(b.xcoord,b.ycoord);
+	context.strokeStyle=lcolor;
+	context.lineWidth=lwidth;
+	context.stroke();
+	
+	
+}
+
+function deg(vrad)
+{
+	return vrad*180/Math.PI;
+}
+function rad(vdeg)
+{
+	return vdeg*Math.PI/180;
+}

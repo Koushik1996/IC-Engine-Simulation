@@ -1,0 +1,462 @@
+<html lang="en-US">
+
+<head>
+<meta charset="UTF-8">
+
+<title>SOLVE - Mechanics of Machines Lab - Governor </title>
+<link rel="stylesheet" href="sins/MOMstyle.css" />
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js'></script>
+<script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js'></script>
+<script type="text/javascript" src= "sins/MOMscript.js"></script>
+
+<script type="text/javascript">
+
+var simstatus=0; 
+var rotstatus=1;
+
+var commenttext="Some Text";
+var commentloc=0;
+
+var trans= new point(150,100);
+var transa= new point(150,230);
+var transaa= new point(200,400);
+
+
+var y= new point(0,0,"y");
+var z= new point(0,0,"z");
+var o= new point(0,0," ");
+var a= new point(0,0," ");
+var b= new point(0,0," ");
+var d= new point(0,0,"d");
+var c= new point(0,0,"c");
+var e= new point(0,0," ");
+var f= new point(0,0," ");
+var i= new point(0,0,"i");
+var k= new point(0,0,"k");
+var l= new point(0,0,"S");
+var v= new point(0,0,"v");
+var va= new point(0,0,"va");
+var ga= new point(0,0,"");
+var ga1= new point(0,0,"ga1");
+var h1=0;
+var om1=0;
+var theta = 0;
+var omega=0;;
+var r=0;
+var h=0;
+var m=4;
+var m1=20;
+var r1=0;
+var g=0;
+var r2=0;
+var r3=0;
+var n=130;
+
+var image= document.getElementById("myImg");
+var image_tracker = 'f';
+
+
+var flaggrashof=true;
+
+var canvas;
+var ctx;
+//timing section
+var simTimeId = setInterval("",'1000');
+var pauseTime = setInterval("",'1000');
+var time=0;
+
+
+function editcss()
+{
+$('.variable').css('padding-top','30px');
+$('.usercheck').css('left','40px');
+$('#legend').css("width",document.getElementById('legendimg').width+"px");
+$('#legend').css("top",419);
+$('#legend').css("left",342);
+$('#container').css("top",0);
+$('#container').css("left",0);
+$('#legendicon').css("top",471);
+}
+
+function startsim()
+{
+simTimeId=setInterval("time=time+0.6; varupdate(); ",'100');
+}
+
+function simstate()
+{
+  var imgfilename=document.getElementById('playpausebutton').src;
+  imgfilename = imgfilename.substring(imgfilename.lastIndexOf('/') + 1, imgfilename.lastIndexOf('.'));
+  if (imgfilename=="bluepausedull")
+  {
+    document.getElementById('playpausebutton').src="sins/blueplaydull.png";
+	 clearInterval(simTimeId);
+    simstatus=1;
+    $('#thetaspinner').spinner("value",theta);			//to set simulation parameters on pause
+    pauseTime=setInterval("varupdate();",'100');
+  }
+    if (imgfilename=="blueplaydull")
+  {
+  	 time=0;			
+  	 clearInterval(pauseTime);
+    document.getElementById('playpausebutton').src="sins/bluepausedull.png";
+    simTimeId=setInterval("time=time+0.6; varupdate(); ",'100');    
+    simstatus=0;
+  } 
+}
+
+
+
+function varinit()
+{
+varchange();		
+
+$('#nslider').slider("value", 90);	
+$('#nspinner').spinner("value", 90);
+}
+
+function varchange()
+{
+
+
+
+//Variable omega2 slider and number input types
+$('#nslider').slider({ max : 230, min : 130, step : 2 });		// slider initialisation : jQuery widget
+$('#nspinner').spinner({ max : 230, min : 130, step : 2 });		// number initialisation : jQuery widget			
+// monitoring change in value and connecting slider and number
+// setting trace point coordinate arrays to empty on change of link length
+$( "#nslider" ).on( "slide", function( e, ui ) { $('#nspinner').spinner("value",ui.value); ptx=[]; pty=[]; ptxdot=[]; ptxddot=[]; ptxdddot=[]; j=20;	ptx.push(b.ycoord-50); pty.push(o.xcoord+j);} );
+$( "#nspinner" ).on( "spin", function( e, ui ) { $('#nslider').slider("value",ui.value); ptx=[]; pty=[]; ptxdot=[]; ptxddot=[]; ptxdddot=[]; j=20;	ptx.push(b.ycoord-50); pty.push(o.xcoord+j);} );
+$( "#nspinner" ).on( "change", function() {  varchange() } );
+	
+varupdate();
+}
+
+function varupdate()
+{
+
+
+
+$('#thetaslider').slider("value", $('#thetaspinner').spinner('value')); 
+
+
+
+
+
+
+if(!simstatus)
+{
+$('#nslider').slider("enable"); 
+$('#nspinner').spinner("enable");
+$('#thetaslider').slider("disable"); 
+$('#thetaspinner').spinner("disable"); 
+n=$('#nspinner').spinner("value");
+omega=(2*3.14*n)/600;
+printcomment("",2);
+theta=theta+(rotstatus*0.6*deg(omega));
+theta=theta%360;
+if(theta<0)theta+=360;
+}
+
+if(simstatus)
+{
+$('#thetaslider').slider("enable"); 
+$('#thetaspinner').spinner("enable");
+$('#nslider').slider("disable"); 
+$('#nspinner').spinner("disable"); 
+theta=$('#thetaspinner').spinner("value");
+
+}
+
+
+h=(m+m1)*9.81/(omega*omega*m);
+g=(80*80)-(h*h);
+r1= Math.sqrt(g);
+r2= r1*Math.cos(rad(theta));
+r3= 10*Math.cos(rad(theta));
+o.xcoord=0;
+o.ycoord=0;
+z.xcoord=10*Math.cos(rad(theta));
+z.ycoord=10*Math.sin(rad(theta));
+y.xcoord=-10*Math.cos(rad(theta));
+y.ycoord=-10*Math.sin(rad(theta));
+c.xcoord=0;
+c.ycoord=0;
+d.xcoord=0;
+e.xcoord=r2;
+e.ycoord=-h;
+f.xcoord=-r2;
+f.ycoord=-h;
+d.ycoord=-2*h;
+i.xcoord=r3;
+i.ycoord=-2*h;
+k.xcoord=-r3;
+k.ycoord=-2*h;
+l.xcoord=0;
+l.ycoord=-2*h-30;
+v.xcoord=r3
+v.ycoord=-2*h-30;
+va.xcoord=-r3;
+va.ycoord=-2*h-30;
+a.xcoord=r1*Math.cos(rad(theta));
+a.ycoord=r1*Math.sin(rad(theta));
+b.xcoord=-r1*Math.cos(rad(theta));
+b.ycoord=-r1*Math.sin(rad(theta));
+
+ga.xcoord=h*10;
+ga.ycoord=n;
+
+
+
+
+draw();
+}
+
+function draw()
+{
+  canvas = document.getElementById("simscreen");
+  ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,550,400);  //clears the complete canvas#simscreen everytime
+  
+  pointtrans(o,trans);
+  pointtrans(b,trans);
+  pointtrans(a,trans);
+  pointtrans(z,trans);
+  pointtrans(y,trans);
+  pointtrans(c,transa);
+  pointtrans(d,transa);
+  pointtrans(e,transa);
+  pointtrans(f,transa);
+  pointtrans(i,transa);
+  pointtrans(k,transa);
+  pointtrans(l,transa);
+  pointtrans(v,transa);
+  pointtrans(va,transa);
+  pointtrans(ga,transaa);
+  pointtrans(ga1,transaa);
+  
+  ctx.beginPath();
+  ctx.closePath();
+  ctx.beginPath();
+  ctx.lineWidth=1;
+  ctx.strokeStyle= "#666666";
+  //ctx.setLineDash([5, 15]);
+  
+  ctx.moveTo(150,o.xcoord);
+  ctx.lineTo(150,-400);
+  ctx.lineTo(150,400);
+  ctx.moveTo(150,200);
+  ctx.lineTo(50,200);
+  ctx.lineTo(250,200);
+  ctx.stroke();
+  ctx.closePath();
+  
+//Pivot and centre 
+  pointjoin(o,a,ctx,"#CCCC00",5);
+  pointjoin(o,b,ctx,"#CCCC00",5);
+  pointdisp(b,ctx,10,'#CCCC00','#CCCC00' );
+  pointdisp(a,ctx,10,'#CCCC00','#CCCC00');
+  pointjoin(z,y,ctx,"#CCCC00",20);
+  pointjoin(c,d,ctx,"#CCCC00",5);
+  pointjoin(c,e,ctx,"#CCCC00",5);
+  pointjoin(c,f,ctx,"#CCCC00",5);
+  pointdisp(f,ctx,10,'#CCCC00','#CCCC00');
+  pointdisp(e,ctx,10,'#CCCC00','#CCCC00');
+  pointjoin(e,i,ctx,"#CCCC00",5);
+  pointjoin(f,k,ctx,"#CCCC00",5);
+  pointjoin(i,k,ctx,"#CCCC00",20);
+  pointjoin(d,l,ctx,"#CCCC00",10);
+  pointjoin(v,va,ctx,"#CCCC00",10);
+  
+  
+  
+  pointdisp(l,ctx,6,"","",'','','');
+ 
+
+    
+  
+  graph(ctx);
+}
+
+
+function graph(context)
+{
+
+
+if(document.getElementById("graphPlot").checked==true)
+{
+if(!simstatus)
+{
+
+pointdisp(ga,ctx,5,"#00000","#003366",'','','');
+
+ for(n=130; n<=230; n++)
+{
+omega=(2*3.14*n)/600;
+omega1=(2*3.14*(n-1))/600;
+h=(m+m1)*9.81/(omega*omega*m);
+h1=(m+m1)*9.81/(omega1*omega1*m);
+
+ga.xcoord=h*10;
+ga.ycoord=n;
+ga1.xcoord=h1*10;
+ga1.ycoord=(n-1);
+
+ga.xcoord+=transaa.xcoord;
+ga.ycoord=transaa.ycoord-ga.ycoord;
+
+ga1.xcoord+=transaa.xcoord;
+ga1.ycoord=transaa.ycoord-ga1.ycoord;
+pointjoin(ga,ga1,ctx,"#CCCC00",2);
+}
+
+ctx.beginPath();
+ctx.lineWidth=2;
+ctx.strokeStyle= "#666666";
+
+ctx.lineTo(280,20);
+ctx.lineTo(280,300);
+ctx.lineTo(280,300);
+ctx.lineTo(540,300);
+ctx.stroke();
+ctx.closePath();
+ctx.font="15px Georgia";
+ctx.fillText("n",260,30);
+ctx.fillText("(rpm)",240,45);
+ctx.fillText("height(mm)",472,340);
+ctx.font="12px Georgia";
+//ctx.fillText("square of rpm is inversely propotional to height",250,390);
+
+ctx.beginPath();
+ctx.lineWidth=1;
+ctx.strokeStyle= "#666666";
+ctx.font="10px Arial";
+ctx.moveTo(275,267);
+ctx.lineTo(275,267);
+ctx.lineTo(285,267);
+ctx.fillText("130",260,267);
+ctx.moveTo(275,217);
+ctx.lineTo(275,217);
+ctx.lineTo(285,217);
+ctx.fillText("180",260,217);
+ctx.moveTo(275,167);
+ctx.lineTo(275,167);
+ctx.lineTo(285,167);
+ctx.fillText("230",260,167);
+ctx.moveTo(275,117);
+ctx.lineTo(275,117);
+ctx.lineTo(285,117);
+ctx.fillText("280",260,117);
+
+ctx.moveTo(300,295);
+ctx.lineTo(300,295);
+ctx.lineTo(300,305);
+ctx.fillText("100",290,310);
+ctx.moveTo(354,295);
+ctx.lineTo(354,295);
+ctx.lineTo(354,305);
+ctx.fillText("154",350,310);
+ctx.moveTo(408,295);
+ctx.lineTo(408,295);
+ctx.lineTo(408,305);
+ctx.fillText("208",403,310);
+ctx.moveTo(462,295);
+ctx.lineTo(462,295);
+ctx.lineTo(462,305);
+ctx.fillText("262",457,310);
+ctx.moveTo(516,295);
+ctx.lineTo(516,295);
+ctx.lineTo(516,305);
+ctx.fillText("316",511,310);
+
+ctx.stroke();
+ctx.closePath();
+
+//var image=document.getElementById('myImg');
+	  // image.src="sins/blank.PNG"
+	 
+ var image=document.getElementById('myImg');
+	   image.src="sins/relation_rpm.PNG";
+	  
+
+}
+}
+else{
+var image=document.getElementById('myImg');
+	   image.src="sins/blank.PNG"
+}
+}
+function printcomment(commenttext,commentloc)
+{
+  
+  document.getElementById('commentboxright').style.visibility='hidden';
+  document.getElementById('commentboxleft').style.width='570px';
+  document.getElementById('commentboxleft').innerHTML = "<center>s stands for shaft; change rpm to see the change in height </center>"; 
+  
+  // ignore use of deprecated tag <center> . Code is executed only if printcomment function receives inappropriate commentloc value
+
+}
+
+</script>
+</head>
+
+<body onload="editcss(); startsim(); varinit();">
+
+<noscript>
+The simulation requires JavaScript to be enabled.
+</noscript>
+
+<div id="container">
+<div id="simtitle">Porter Governor</div>
+
+<canvas id="simscreen" height="400px" width="550px"></canvas>
+
+
+<div id="legend"><img id="legendimg"></img></div>
+
+<img src="sins/blank.PNG" id="myImg" style="position:absolute; left: 380; top: 100; width: 200;      height: 200; "onclick="graph(context)"/>
+</div>
+<div id="titleincanvas"></div>
+<div id="datatable1" class="datatable"></div>
+<div id="datatable2" class="datatable"></div>
+
+<div id="commentboxleft"></div>
+<div id="commentboxright"></div>
+
+<div id="vartitle">VARIABLES</div>
+
+<div id="variables">
+<div class="variable">
+
+<div id="rslider"></div>
+</div>
+
+
+
+
+
+<div id = "nset" class="variable">
+<div class="varname"><p title='Input Angular Velocity'>n (rpm) </p>
+<input id="nspinner"></input></div>
+<div id="nslider"></div>
+
+</div>
+</div>
+
+<div id="ctrltitle">CONTROLS</div>
+
+<div id="controls">
+
+<br> </br>
+<br> </br>
+<div class="usercheck">
+<input type="checkbox" id="graphPlot" ></input> <p>Show Graph</p>
+</div>
+</div>
+
+<div id="copyright" title="Developer : Bijay Swarnkar"> Copyright &copy; SOLVE The Virtual Lab @ NITK Surathkal </div>
+
+</div>
+
+</body>
+</html>
